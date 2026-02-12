@@ -1,0 +1,57 @@
+# Шаблон файла для локального разворота системы через docker compose
+# скопируйте файл в корень проета
+services:
+  server:
+    container_name: go-advaced-gophkeeper-server
+    build: 
+      context: ./deploy/local
+    depends_on:
+      - gophkeeper-db
+    volumes:
+      - .:/usr/local/src
+      # - ${HOME}:${HOME}:rw
+      # - /etc/passwd:/etc/passwd:ro
+      # - /etc/group:/etc/group:ro
+      # - /etc/shadow:/etc/shadow:ro
+    # user: 1000:1000
+    environment:
+      RUN_ADDRESS: :8443
+      DATABASE_URI: postgres://keeperuser:keeperpass@gophkeeper-db:5432/gophkeeper?sslmode=disable
+    ports:
+      - 8443:8443
+    networks:
+      - gophkeeper
+    command: go run cmd/server/main.go
+
+
+  gophkeeper-db:
+      container_name: go-advaced-gophkeeper-postgres-db
+      image: postgres:17.2
+      working_dir: /app
+      healthcheck:
+        test: [ "CMD-SHELL", "pg_isready -U keeperuser -d gophkeeper" ]
+        interval: 10s
+        retries: 5
+        start_period: 30s
+        timeout: 10s
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_DB: postgres
+        POSTGRES_PASSWORD: "P@ssw0rd"
+        PGDATA: "/var/lib/postgresql/data"
+      ports:
+          - '5432:5432'
+      networks:
+          - gophkeeper
+      volumes:
+          - "./db/init/local:/docker-entrypoint-initdb.d"
+          - gophkeeper-pgdata:/var/lib/postgresql/data
+      restart: always
+
+networks:
+  gophkeeper:
+      name: gophkeeper
+      driver: bridge
+
+volumes:
+  gophkeeper-pgdata:
