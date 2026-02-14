@@ -26,3 +26,8 @@ vendor/
 
 # Local build
 /compose.yaml
+
+# Keys and certificates
+rsa/*.crt
+rsa/*.key
+rsa/*.pem
