@@ -10,7 +10,6 @@ import (
 	srvErrors "github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 )
 
-//go:generate mockgen -source=auth.go -destination=mocks/auth_mock.go -package=mocks
 type AuthService interface {
 	Register(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
 	Login(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)

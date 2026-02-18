@@ -2,9 +2,9 @@ BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     login VARCHAR(64) NOT NULL UNIQUE,
-    hash VARCHAR(32) NOT NULL,
-    auth_salt VARCHAR(16)  NOT NULL,
-    encr_salt VARCHAR(16)  NOT NULL,
+    hash VARCHAR(64) NOT NULL,
+    auth_salt VARCHAR(32)  NOT NULL,
+    encr_salt VARCHAR(32)  NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 

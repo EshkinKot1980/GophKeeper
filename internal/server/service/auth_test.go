@@ -25,7 +25,7 @@ func TestAuth_Register(t *testing.T) {
 	goodCredentials := dto.Credentials{Login: "testLogin", Password: "t1estP5assword"}
 
 	tooLongLoginCr := dto.Credentials{Login: "l", Password: "t1estP5assword"}
-	for range entity.UserMaxLoginLen {
+	for range dto.CredentialsLoginMaxLen {
 		tooLongLoginCr.Login += "l"
 	}
 

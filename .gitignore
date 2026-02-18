@@ -31,3 +31,4 @@ vendor/
 rsa/*.crt
 rsa/*.key
 rsa/*.pem
+profile.cov

@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/handler/mocks"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 )
@@ -27,7 +26,7 @@ func TestAuth_Register(t *testing.T) {
 	errLoginTooLong := fmt.Errorf(
 		"%w: login too long, max %d characters",
 		errors.ErrAuthInvalidCredentials,
-		entity.UserMaxLoginLen,
+		dto.CredentialsLoginMaxLen,
 	)
 
 	type want struct {

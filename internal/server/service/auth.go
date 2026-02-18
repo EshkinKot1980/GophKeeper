@@ -1,4 +1,4 @@
-// Пакет service содержит сервисный слой серверной часи приложения
+// Пакет service содержит сервисный слой серверной части приложения
 package service
 
 import (
@@ -45,8 +45,8 @@ func NewAuth(r UserRepository, l Logger, jwtPub *rsa.PublicKey, jwtPriv *rsa.Pri
 // Register регистрация пользователя по логину с паролем
 func (a *Auth) Register(ctx context.Context, c dto.Credentials) (resp dto.AuthResponse, err error) {
 	cr := trimCredentials(c)
-	if err := validateCredentials(cr); err != nil {
-		return resp, err
+	if err := cr.Validate(); err != nil {
+		return resp, fmt.Errorf("%w: %w", srvErrors.ErrAuthInvalidCredentials, err)
 	}
 
 	authSalt, err := crypto.GenerateRandomBytes(crypto.SaltLen)
@@ -218,24 +218,4 @@ func trimCredentials(c dto.Credentials) dto.Credentials {
 		Login:    strings.TrimSpace(c.Login),
 		Password: strings.TrimSpace(c.Password),
 	}
-}
-
-func validateCredentials(c dto.Credentials) error {
-	if c.Login == "" {
-		return fmt.Errorf("%w: login is empty", srvErrors.ErrAuthInvalidCredentials)
-	}
-
-	if c.Password == "" {
-		return fmt.Errorf("%w: password is empty", srvErrors.ErrAuthInvalidCredentials)
-	}
-
-	if len(c.Login) > entity.UserMaxLoginLen {
-		return fmt.Errorf(
-			"%w: login too long, max %d characters",
-			srvErrors.ErrAuthInvalidCredentials,
-			entity.UserMaxLoginLen,
-		)
-	}
-
-	return nil
 }
