@@ -63,3 +63,17 @@ func (mr *MockClientMockRecorder) Register(cr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockClient)(nil).Register), cr)
 }
+
+// Upload mocks base method.
+func (m *MockClient) Upload(data dto.SecretRequest, token string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upload", data, token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upload indicates an expected call of Upload.
+func (mr *MockClientMockRecorder) Upload(data, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockClient)(nil).Upload), data, token)
+}

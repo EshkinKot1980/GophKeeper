@@ -17,8 +17,10 @@ type Storage interface {
 
 // Client клиент для взаимодействия с сервером
 type Client interface {
-	//Register регистрирует пользователя в системе
+	// Register регистрирует пользователя в системе
 	Register(cr dto.Credentials) (dto.AuthResponse, error)
-	//Login осуществляет вход пользователя в систему
+	// Login осуществляет вход пользователя в систему
 	Login(cr dto.Credentials) (dto.AuthResponse, error)
+	// Upload coхраняет секрет на сервере
+	Upload(data dto.SecretRequest, token string) error
 }

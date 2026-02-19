@@ -22,11 +22,17 @@ type AuthService interface {
 	Login(cr dto.Credentials) error
 }
 
+// SecretService сервис для работы с секретными данными пользователя
+type SecretService interface {
+	// Upload отправляет зашифрованные данные на сервер.
+	// Принимает частино заполненный dto.SecretRequest и данные, которые нужно зашифровать.
+	Upload(secret dto.SecretRequest, data *dto.PlainData) error
+}
+
 var (
-	cfg         *config.Config
-	httpClient  *http.Client
-	fileStorage *storage.FileStorage
-	authService AuthService
+	cfg           *config.Config
+	authService   AuthService
+	secretServise SecretService
 )
 
 // Корневая команда приложения Cobra
@@ -36,7 +42,7 @@ var rootCmd = &cobra.Command{
 	Long:  `Secure client for store passwords, credit cards data, and binary files.`,
 
 	// PersistentPreRunE выполняется перед любой командой
-	// Здесь мы инициализируем подключение к БД и загружаем конфиг.
+	// Здесь мы загружаем конфиг и инициализируем сервисы.
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		cfg, err = config.Load()
@@ -44,14 +50,16 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
-		httpClient = http.NewClient(cfg.ServerAddr, cfg.AllowSelfSignedCert)
+		baseURL := http.Scheme + cfg.ServerAddr + http.APIprefix
+		httpClient := http.NewClient(baseURL, cfg.AllowSelfSignedCert)
 
-		fileStorage, err = storage.NewFileSorage()
+		fileStorage, err := storage.NewFileSorage()
 		if err != nil {
 			return fmt.Errorf("failed init storage: %w", err)
 		}
 
 		authService = service.NewAuth(httpClient, fileStorage)
+		secretServise = service.NewSecret(httpClient, fileStorage)
 
 		return nil
 	},
