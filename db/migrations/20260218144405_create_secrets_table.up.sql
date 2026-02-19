@@ -7,10 +7,10 @@ CREATE TABLE IF NOT EXISTS secrets (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
     data_type secret_data_type NOT NULL,
-    title VARCHAR(32) NOT NULL,
-    meta_data JSONB NOT NULL DEFAULT '{}'::jsonb,
-    encripted_data BYTEA,
-    ecrypted_key VARCHAR(64) NOT NULL,
+    name VARCHAR(64) NOT NULL,
+    meta_data JSONB NOT NULL DEFAULT '[]'::jsonb,
+    encrypted_data BYTEA,
+    encrypted_key VARCHAR(128) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

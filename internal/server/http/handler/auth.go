@@ -11,7 +11,9 @@ import (
 )
 
 type AuthService interface {
+	// Register регистрирует пользователя по логину и паролю.
 	Register(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
+	// Login выполняет вход пользователя в систему по логину с паролем.
 	Login(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
 }
 

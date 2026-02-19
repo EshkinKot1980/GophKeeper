@@ -37,7 +37,19 @@ var credentialsCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println(string(data))
+		err = secretServise.Upload(
+			dto.SecretRequest{
+				Name:     name,
+				DataType: dto.SecretTypeCredentials,
+				Meta:     []dto.MetaData{},
+			},
+			data,
+		)
+		if err != nil {
+			fmt.Printf("failed to send data to server: %s\n", err.Error())
+			return
+		}
+		// fmt.Println(string(data))
 	},
 }
 

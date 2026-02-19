@@ -11,6 +11,7 @@ import (
 )
 
 type AuthService interface {
+	// User отдает пользователя по токену
 	User(ctx context.Context, token string) (entity.User, error)
 }
 
@@ -30,7 +31,7 @@ func (a *Authorizer) Authorize(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
 		if header == "" {
-			http.Error(w, "", http.StatusUnauthorized)
+			http.Error(w, "token required", http.StatusUnauthorized)
 			return
 		}
 

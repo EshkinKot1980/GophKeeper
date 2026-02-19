@@ -26,7 +26,7 @@ type AuthService interface {
 type SecretService interface {
 	// Upload отправляет зашифрованные данные на сервер.
 	// Принимает частино заполненный dto.SecretRequest и данные, которые нужно зашифровать.
-	Upload(secret dto.SecretRequest, data *dto.PlainData) error
+	Upload(secret dto.SecretRequest, data []byte) error
 }
 
 var (

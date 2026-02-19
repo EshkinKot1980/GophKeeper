@@ -18,7 +18,7 @@ type SecretRequest struct {
 	DataType string         `json:"data_type"`
 	Name     string         `json:"name"`
 	Meta     []MetaData     `json:"meta"`
-	Data     *EncryptedData `json:"data"`
+	EncrData *EncryptedData `json:"data"`
 }
 
 // MetaData метаданные секрата.
@@ -33,11 +33,4 @@ type EncryptedData struct {
 	Key string `json:"key"`
 	// Зашифрованные бинарные данные
 	Data []byte `json:"data"`
-}
-
-// PlainData cодержит данные в незашифрованом виде.
-// Передается между функциями как указатель для того,
-// так как передача файла в виде слайса байт может быть накладным.
-type PlainData struct {
-	Data []byte
 }

@@ -17,6 +17,7 @@ const (
 	APIprefix    = "/api"
 	RegisterPath = "/register"
 	LoginPath    = "/login"
+	SecretPath   = "/secret"
 	ContentType  = "application/json"
 )
 
@@ -50,7 +51,6 @@ func NewClient(baseURL string, allowSefSignedCert bool) *Client {
 // Register регистрирует пользователя в системе.
 func (c *Client) Register(cr dto.Credentials) (dto.AuthResponse, error) {
 	var authResp dto.AuthResponse
-
 	req := c.client.R().
 		SetResult(&authResp).
 		SetBody(cr)
@@ -93,7 +93,7 @@ func (c *Client) Upload(data dto.SecretRequest, token string) error {
 		SetHeader("Authorization", "Bearer "+token).
 		SetBody(data)
 
-	resp, err := req.Post(LoginPath)
+	resp, err := req.Post(SecretPath)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrSecretSendFailed, err)
 	} else if !resp.IsSuccess() {

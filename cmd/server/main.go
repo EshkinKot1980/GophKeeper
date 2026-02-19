@@ -28,8 +28,6 @@ func run() error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	fmt.Println(cfg)
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
@@ -45,8 +43,6 @@ func run() error {
 	}
 	defer logger.Sync()
 
-	userRepository := repository.NewUser(db)
-
 	jwtPrivateKey, err := crypto.LoadPrivateKey(cfg.JWTpriv)
 	if err != nil {
 		return fmt.Errorf("failed to load jwt private key: %w", err)
@@ -56,8 +52,12 @@ func run() error {
 		return fmt.Errorf("failed to load jwt ppublic key: %w", err)
 	}
 
+	userRepository := repository.NewUser(db)
 	authService := service.NewAuth(userRepository, logger, jwtPublicKey, jwtPrivateKey)
 
-	httpsServer := http.NewApp(cfg, logger, authService)
+	secretRepository := repository.NewSecret(db)
+	secretService := service.NewSecret(logger, secretRepository)
+
+	httpsServer := http.NewApp(cfg, logger, authService, secretService)
 	return httpsServer.Run(ctx)
 }

@@ -16,19 +16,28 @@ import (
 )
 
 type AuthService interface {
+	// Register регистрирует пользователя по логину и паролю.
 	Register(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
+	// Login выполняет вход пользователя в систему по логину с паролем.
 	Login(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
+	// User отдает пользователя по токену
 	User(ctx context.Context, token string) (entity.User, error)
 }
 
-type App struct {
-	config *config.Config
-	logger *logger.Logger
-	auth   AuthService
+type SecretService interface {
+	// Save сохраняет секрет на сервере
+	Save(ctx context.Context, secret *dto.SecretRequest) error
 }
 
-func NewApp(c *config.Config, l *logger.Logger, a AuthService) *App {
-	return &App{config: c, logger: l, auth: a}
+type App struct {
+	config        *config.Config
+	logger        *logger.Logger
+	authService   AuthService
+	secretService SecretService
+}
+
+func NewApp(c *config.Config, l *logger.Logger, a AuthService, s SecretService) *App {
+	return &App{config: c, logger: l, authService: a, secretService: s}
 }
 
 func (a *App) Run(ctx context.Context) error {
@@ -61,12 +70,15 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) newRouter() http.Handler {
-	authorizer := middleware.NewAuthorizer(a.auth)
-	authHandler := handler.NewAuth(a.auth, a.logger)
+	authorizer := middleware.NewAuthorizer(a.authService)
+	logger := middleware.NewLogger(a.logger)
+	authHandler := handler.NewAuth(a.authService, a.logger)
+	secretHandler := handler.NewSecret(a.secretService, a.logger)
 
 	router := chi.NewRouter()
 
 	router.Route("/api", func(r chi.Router) {
+		r.Use(logger.Log)
 		r.Route("/register", func(r chi.Router) {
 			r.Post("/", authHandler.Register)
 		})
@@ -77,14 +89,10 @@ func (a *App) newRouter() http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(authorizer.Authorize)
 
-			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte("welcome"))
+			r.Route("/secret", func(r chi.Router) {
+				r.Post("/", secretHandler.Upload)
 			})
 		})
-	})
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
 	})
 
 	return router
