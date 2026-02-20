@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	srvErrors "github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
@@ -14,6 +15,8 @@ import (
 type SecretService interface {
 	// Save сохраняет секрет на сервере
 	Save(ctx context.Context, secret *dto.SecretRequest) error
+	// Secret возвращает секрет по secretID, если он принадлежит текущему пользователю.
+	Secret(ctx context.Context, secretID uint64) (dto.SecretResponse, error)
 }
 
 // Secret обработчик запросов загрузки и отдачи секретов пользователя
@@ -44,4 +47,26 @@ func (s *Secret) Upload(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+}
+
+// Get отдает секрет по id, который берет из пути.
+func (s *Secret) Get(w http.ResponseWriter, r *http.Request) {
+	secretID, err := strconv.ParseUint(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid secret id", http.StatusBadRequest)
+		return
+	}
+
+	secret, err := s.service.Secret(r.Context(), secretID)
+
+	if err != nil {
+		if errors.Is(err, srvErrors.ErrSecretNotFound) {
+			http.Error(w, "", http.StatusNotFound)
+		} else {
+			http.Error(w, statusText500, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	newJSONwriter(w, s.logger).write(secret, "secret", http.StatusOK)
 }

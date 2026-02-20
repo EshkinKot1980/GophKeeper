@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/config"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/handler"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/logger"
@@ -16,18 +14,11 @@ import (
 )
 
 type AuthService interface {
-	// Register регистрирует пользователя по логину и паролю.
-	Register(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
-	// Login выполняет вход пользователя в систему по логину с паролем.
-	Login(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
-	// User отдает пользователя по токену
-	User(ctx context.Context, token string) (entity.User, error)
+	handler.AuthService
+	middleware.AuthService
 }
 
-type SecretService interface {
-	// Save сохраняет секрет на сервере
-	Save(ctx context.Context, secret *dto.SecretRequest) error
-}
+type SecretService = handler.SecretService
 
 type App struct {
 	config        *config.Config
@@ -91,6 +82,7 @@ func (a *App) newRouter() http.Handler {
 
 			r.Route("/secret", func(r chi.Router) {
 				r.Post("/", secretHandler.Upload)
+				r.Get("/{id}", secretHandler.Get)
 			})
 		})
 	})

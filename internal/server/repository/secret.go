@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
@@ -19,6 +20,7 @@ func NewSecret(db *pg.DB) *Secret {
 	return &Secret{pool: db.Pool()}
 }
 
+// Create создает пользовательский секрет в БД.
 func (s *Secret) Create(ctx context.Context, secret entity.Secret) error {
 	query := `
 	INSERT INTO secrets
@@ -43,4 +45,22 @@ func (s *Secret) Create(ctx context.Context, secret entity.Secret) error {
 	}
 
 	return nil
+}
+
+// GetForUser возвращает пользовательский секрет по secretID и userID.
+func (s *Secret) GetForUser(ctx context.Context, secretID uint64, userID string) (entity.Secret, error) {
+	var secret entity.Secret
+
+	query := `SELECT * FROM secrets WHERE id = $1 AND user_id = $2`
+	rows, err := s.pool.Query(ctx, query, secretID, userID)
+	if err != nil {
+		return secret, fmt.Errorf("failed to select from secrets: %w", err)
+	}
+
+	secret, err = pgx.CollectOneRow(rows, pgx.RowToStructByName[entity.Secret])
+	if err != nil {
+		return secret, errors.Trasform(err)
+	}
+
+	return secret, nil
 }

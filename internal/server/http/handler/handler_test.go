@@ -23,7 +23,7 @@ func Test_jsonWriter_write(t *testing.T) {
 		body   string
 	}
 
-	validLSON := `{"token":"TokenString","encr_salt":"EncryptiobSaltString"}`
+	validLSON := `{"token":"TokenString","encr_salt":"EncryptionSaltString"}`
 
 	tests := []struct {
 		name       string
@@ -43,7 +43,7 @@ func Test_jsonWriter_write(t *testing.T) {
 			},
 			value: dto.AuthResponse{
 				Token:    "TokenString",
-				EncrSalt: "EncryptiobSaltString",
+				EncrSalt: "EncryptionSaltString",
 			},
 			valueName:  "AuthResponse",
 			stasusCode: http.StatusOK,
@@ -84,7 +84,7 @@ func Test_jsonWriter_write(t *testing.T) {
 			},
 			value: dto.AuthResponse{
 				Token:    "TokenString",
-				EncrSalt: "EncryptiobSaltString",
+				EncrSalt: "EncryptionSaltString",
 			},
 			valueName:  "AuthResponse",
 			stasusCode: http.StatusOK,

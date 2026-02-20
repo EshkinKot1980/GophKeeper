@@ -22,9 +22,10 @@ const (
 )
 
 var (
-	ErrRegistrationFailed = errors.New("failed to register user")
-	ErrLoginFailed        = errors.New("login failed")
-	ErrSecretSendFailed   = errors.New("failed send secret")
+	ErrRegistrationFailed   = errors.New("failed to register user")
+	ErrLoginFailed          = errors.New("login failed")
+	ErrSecretSendFailed     = errors.New("failed to send secret")
+	ErrSecretRetrieveFailed = errors.New("failed to retrieve secret")
 )
 
 type Client struct {
@@ -106,4 +107,33 @@ func (c *Client) Upload(data dto.SecretRequest, token string) error {
 	}
 
 	return nil
+}
+
+// Retrieve получает секрет пользователя с ервера
+func (c *Client) Retrieve(id uint64, token string) (dto.SecretResponse, error) {
+	var secret dto.SecretResponse
+
+	req := c.client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetResult(&secret)
+
+	path := fmt.Sprintf("%s/%d", SecretPath, id)
+	resp, err := req.Get(path)
+
+	if err != nil {
+		return secret, fmt.Errorf("%w: %w", ErrSecretRetrieveFailed, err)
+	} else if !resp.IsSuccess() {
+		switch resp.StatusCode() {
+		case http.StatusUnauthorized:
+			return secret, fmt.Errorf("%w: authorization failed", ErrSecretRetrieveFailed)
+		case http.StatusBadRequest:
+			return secret, fmt.Errorf("%w: %s", ErrSecretRetrieveFailed, resp)
+		case http.StatusNotFound:
+			return secret, fmt.Errorf("%w: not found", ErrSecretRetrieveFailed)
+		default:
+			return secret, fmt.Errorf("%w: internal server error", ErrSecretRetrieveFailed)
+		}
+	}
+
+	return secret, nil
 }

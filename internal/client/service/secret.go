@@ -25,7 +25,7 @@ func NewSecret(c Client, s Storage) *Secret {
 func (s *Secret) Upload(secret dto.SecretRequest, data []byte) error {
 	masterKey, err := s.storage.Key()
 	if err != nil {
-		return fmt.Errorf("unauthorized, try login to system :%w", err)
+		return fmt.Errorf("authorization failed :%w", err)
 	}
 
 	secret.EncrData, err = ecryptData(masterKey, data)
@@ -35,32 +35,59 @@ func (s *Secret) Upload(secret dto.SecretRequest, data []byte) error {
 
 	token, err := s.storage.Token()
 	if err != nil {
-		return fmt.Errorf("unauthorized, try login to system :%w", err)
+		return fmt.Errorf("authorization failed :%w", err)
 	}
 
 	return s.client.Upload(secret, token)
 }
 
-func ecryptData(masterKey, payload []byte) (*dto.EncryptedData, error) {
+// GetSecretAndInfo получает секрет пользователя с сервера по id,
+// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
+func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error) {
+	var resp dto.SecretResponse
+
+	masterKey, err := s.storage.Key()
+	if err != nil {
+		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+	}
+	token, err := s.storage.Token()
+	if err != nil {
+		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+	}
+
+	resp, err = s.client.Retrieve(id, token)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	secret, err := deryptData(masterKey, &resp.EncrData)
+	if err != nil {
+		return nil, resp, fmt.Errorf("failed to decrypt secret :%w", err)
+	}
+
+	return secret, resp, nil
+}
+
+func ecryptData(masterKey, payload []byte) (dto.EncryptedData, error) {
 	var result dto.EncryptedData
 
 	key, err := crypto.GenerateRandomBytes(32)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate DEK: %w", err)
+		return result, fmt.Errorf("failed to generate DEK: %w", err)
 	}
 
 	result.Data, err = crypto.EncryptAES(key, payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt payload: %w", err)
+		return result, fmt.Errorf("failed to encrypt payload: %w", err)
 	}
 
 	encryptedKey, err := crypto.EncryptAES(masterKey, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt DEK: %w", err)
+		return result, fmt.Errorf("failed to encrypt DEK: %w", err)
 	}
 	result.Key = base64.RawStdEncoding.EncodeToString(encryptedKey)
 
-	return &result, nil
+	return result, nil
 }
 
 func deryptData(masterKey []byte, data *dto.EncryptedData) ([]byte, error) {
@@ -80,7 +107,7 @@ func deryptData(masterKey []byte, data *dto.EncryptedData) ([]byte, error) {
 
 	decryptedData, err := crypto.DecryptAES(key, data.Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt data content: %w", err)
+		return nil, fmt.Errorf("failed to decrypt data: %w", err)
 	}
 
 	return decryptedData, nil

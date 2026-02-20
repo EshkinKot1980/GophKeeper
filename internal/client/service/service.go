@@ -23,4 +23,6 @@ type Client interface {
 	Login(cr dto.Credentials) (dto.AuthResponse, error)
 	// Upload coхраняет секрет на сервере
 	Upload(data dto.SecretRequest, token string) error
+	// Retrieve получает секрет пользователя с ервера
+	Retrieve(id uint64, token string) (dto.SecretResponse, error)
 }

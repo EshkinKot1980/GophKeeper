@@ -1,5 +1,7 @@
 package dto
 
+import "time"
+
 const (
 	SecretTypeCredentials = "credentials"
 	SecretTypeCard        = "card"
@@ -15,10 +17,21 @@ var SecretSupportedTypes = []string{
 
 // SecretRequest струкура запроса.
 type SecretRequest struct {
-	DataType string         `json:"data_type"`
-	Name     string         `json:"name"`
-	Meta     []MetaData     `json:"meta"`
-	EncrData *EncryptedData `json:"data"`
+	DataType string        `json:"data_type"`
+	Name     string        `json:"name"`
+	Meta     []MetaData    `json:"meta"`
+	EncrData EncryptedData `json:"data"`
+}
+
+// SecretRequest струкура запроса.
+type SecretResponse struct {
+	ID       uint64        `json:"id"`
+	DataType string        `json:"data_type"`
+	Name     string        `json:"name"`
+	Meta     []MetaData    `json:"meta"`
+	EncrData EncryptedData `json:"data"`
+	Created  time.Time     `json:"created"`
+	Updated  time.Time     `json:"updated"`
 }
 
 // MetaData метаданные секрата.

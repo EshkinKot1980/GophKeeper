@@ -4,7 +4,7 @@ import "time"
 
 type Secret struct {
 	ID            uint64    `db:"id"`
-	UserID        string    `db:"iser_id"`
+	UserID        string    `db:"user_id"`
 	DataType      string    `db:"data_type"`
 	Name          string    `db:"name"`
 	MetaData      string    `db:"meta_data"`

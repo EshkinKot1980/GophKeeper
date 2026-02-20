@@ -27,6 +27,9 @@ type SecretService interface {
 	// Upload отправляет зашифрованные данные на сервер.
 	// Принимает частино заполненный dto.SecretRequest и данные, которые нужно зашифровать.
 	Upload(secret dto.SecretRequest, data []byte) error
+	// GetSecretAndInfo получает секрет пользователя с сервера по id,
+	// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
+	GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error)
 }
 
 var (
