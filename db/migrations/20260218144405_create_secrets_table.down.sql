@@ -1,0 +1,5 @@
+-- Active: 1771236191658@@127.0.0.1@5434
+BEGIN TRANSACTION;
+DROP INDEX IF EXISTS idx_secrets_user_id_data_type;
+DROP TABLE IF EXISTS secrets;
+COMMIT;
