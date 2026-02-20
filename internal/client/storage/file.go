@@ -55,7 +55,7 @@ func (s *FileStorage) PutToken(token string) error {
 func (s *FileStorage) Token() (string, error) {
 	token, err := os.ReadFile(s.tokenPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to write token: %w", err)
+		return "", fmt.Errorf("failed to get token: %w", err)
 	}
 	return string(token), nil
 }
@@ -71,7 +71,7 @@ func (s *FileStorage) PutKey(key []byte) error {
 
 // Key получение ключа
 func (s *FileStorage) Key() ([]byte, error) {
-	key, err := os.ReadFile(s.tokenPath)
+	key, err := os.ReadFile(s.keyPath)
 	if err != nil {
 		return []byte{}, fmt.Errorf("failed to write token: %w", err)
 	}

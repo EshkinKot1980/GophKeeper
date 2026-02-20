@@ -58,7 +58,7 @@ func TestAuthorizer_Authorize(t *testing.T) {
 			},
 			want: want{
 				code: http.StatusUnauthorized,
-				body: "",
+				body: "token required",
 			},
 		},
 		{

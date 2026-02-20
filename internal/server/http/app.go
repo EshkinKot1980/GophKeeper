@@ -6,29 +6,33 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/config"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/handler"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/logger"
 	"github.com/go-chi/chi/v5"
 )
 
 type AuthService interface {
-	Register(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
-	Login(ctx context.Context, c dto.Credentials) (dto.AuthResponse, error)
-	User(ctx context.Context, token string) (entity.User, error)
+	handler.AuthService
+	middleware.AuthService
 }
+
+type Logger interface {
+	handler.Logger
+	middleware.HTTPloger
+}
+
+type SecretService = handler.SecretService
 
 type App struct {
-	config *config.Config
-	logger *logger.Logger
-	auth   AuthService
+	config        *config.Config
+	logger        Logger
+	authService   AuthService
+	secretService SecretService
 }
 
-func NewApp(c *config.Config, l *logger.Logger, a AuthService) *App {
-	return &App{config: c, logger: l, auth: a}
+func NewApp(c *config.Config, l Logger, a AuthService, s SecretService) *App {
+	return &App{config: c, logger: l, authService: a, secretService: s}
 }
 
 func (a *App) Run(ctx context.Context) error {
@@ -61,12 +65,15 @@ func (a *App) Run(ctx context.Context) error {
 }
 
 func (a *App) newRouter() http.Handler {
-	authorizer := middleware.NewAuthorizer(a.auth)
-	authHandler := handler.NewAuth(a.auth, a.logger)
+	authorizer := middleware.NewAuthorizer(a.authService)
+	logger := middleware.NewLogger(a.logger)
+	authHandler := handler.NewAuth(a.authService, a.logger)
+	secretHandler := handler.NewSecret(a.secretService, a.logger)
 
 	router := chi.NewRouter()
 
 	router.Route("/api", func(r chi.Router) {
+		r.Use(logger.Log)
 		r.Route("/register", func(r chi.Router) {
 			r.Post("/", authHandler.Register)
 		})
@@ -77,14 +84,12 @@ func (a *App) newRouter() http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(authorizer.Authorize)
 
-			r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte("welcome"))
+			r.Route("/secret", func(r chi.Router) {
+				r.Post("/", secretHandler.Upload)
+				r.Get("/{id}", secretHandler.Get)
+				r.Get("/", secretHandler.List)
 			})
 		})
-	})
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
 	})
 
 	return router

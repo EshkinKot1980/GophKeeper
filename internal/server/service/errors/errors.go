@@ -8,4 +8,6 @@ var (
 	ErrAuthInvalidCredentials = errors.New("invalid credentials")
 	ErrAuthInvalidToken       = errors.New("invalid token")
 	ErrAuthTokenExpired       = errors.New("token expired")
+	ErrSecretInalidData       = errors.New("invalid secret data")
+	ErrSecretNotFound         = errors.New("secret not found")
 )

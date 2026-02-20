@@ -17,12 +17,16 @@ const (
 	APIprefix    = "/api"
 	RegisterPath = "/register"
 	LoginPath    = "/login"
+	SecretPath   = "/secret"
 	ContentType  = "application/json"
 )
 
 var (
-	ErrRegistrationFailed = errors.New("failed to register user")
-	ErrLoginFailed        = errors.New("login failed")
+	ErrRegistrationFailed   = errors.New("failed to register user")
+	ErrLoginFailed          = errors.New("login failed")
+	ErrSecretSendFailed     = errors.New("failed to send secret")
+	ErrSecretRetrieveFailed = errors.New("failed to retrieve secret")
+	ErrSecretInfoListFailed = errors.New("failed to retrieve secret ifo list")
 )
 
 type Client struct {
@@ -30,14 +34,12 @@ type Client struct {
 	client  *resty.Client
 }
 
-func NewClient(serverAddr string, allowSefSignedCert bool) *Client {
-	url := Scheme + serverAddr + APIprefix
-
+func NewClient(baseURL string, allowSefSignedCert bool) *Client {
 	c := Client{
-		baseURL: url,
+		baseURL: baseURL,
 		client: resty.New().
 			SetTimeout(time.Minute).
-			SetBaseURL(url).
+			SetBaseURL(baseURL).
 			SetHeader("Content-Type", ContentType),
 	}
 
@@ -48,9 +50,9 @@ func NewClient(serverAddr string, allowSefSignedCert bool) *Client {
 	return &c
 }
 
+// Register регистрирует пользователя в системе.
 func (c *Client) Register(cr dto.Credentials) (dto.AuthResponse, error) {
 	var authResp dto.AuthResponse
-
 	req := c.client.R().
 		SetResult(&authResp).
 		SetBody(cr)
@@ -65,6 +67,7 @@ func (c *Client) Register(cr dto.Credentials) (dto.AuthResponse, error) {
 	return authResp, nil
 }
 
+// Login осуществляет вход пользователя в систему.
 func (c *Client) Login(cr dto.Credentials) (dto.AuthResponse, error) {
 	var authResp dto.AuthResponse
 
@@ -84,4 +87,76 @@ func (c *Client) Login(cr dto.Credentials) (dto.AuthResponse, error) {
 	}
 
 	return authResp, nil
+}
+
+// Upload coхраняет секрет на сервере.
+func (c *Client) Upload(data dto.SecretRequest, token string) error {
+	req := c.client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetBody(data)
+
+	resp, err := req.Post(SecretPath)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrSecretSendFailed, err)
+	} else if !resp.IsSuccess() {
+		text := http.StatusText(resp.StatusCode())
+		if body := resp.String(); body != "" {
+			text += ": " + body
+		}
+
+		return fmt.Errorf("%w: %s", ErrSecretSendFailed, text)
+	}
+
+	return nil
+}
+
+// Retrieve получает секрет пользователя с ервера
+func (c *Client) Retrieve(id uint64, token string) (dto.SecretResponse, error) {
+	var secret dto.SecretResponse
+
+	req := c.client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetResult(&secret)
+
+	path := fmt.Sprintf("%s/%d", SecretPath, id)
+	resp, err := req.Get(path)
+
+	if err != nil {
+		return secret, fmt.Errorf("%w: %w", ErrSecretRetrieveFailed, err)
+	} else if !resp.IsSuccess() {
+		switch resp.StatusCode() {
+		case http.StatusUnauthorized:
+			return secret, fmt.Errorf("%w: authorization failed", ErrSecretRetrieveFailed)
+		case http.StatusBadRequest:
+			return secret, fmt.Errorf("%w: %s", ErrSecretRetrieveFailed, resp)
+		case http.StatusNotFound:
+			return secret, fmt.Errorf("%w: not found", ErrSecretRetrieveFailed)
+		default:
+			return secret, fmt.Errorf("%w: internal server error", ErrSecretRetrieveFailed)
+		}
+	}
+
+	return secret, nil
+}
+
+// InfoList получает информацию о всех секретах пользователя с сервера.
+func (c *Client) InfoList(token string) ([]dto.SecretInfo, error) {
+	var list []dto.SecretInfo
+
+	req := c.client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetResult(&list)
+
+	resp, err := req.Get(SecretPath)
+
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrSecretInfoListFailed, err)
+	} else if !resp.IsSuccess() {
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return nil, fmt.Errorf("%w: authorization failed", ErrSecretInfoListFailed)
+		}
+		return nil, fmt.Errorf("%w: internal server error", ErrSecretInfoListFailed)
+	}
+
+	return list, nil
 }

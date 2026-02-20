@@ -39,6 +39,8 @@ func (a *Auth) Login(cr dto.Credentials) error {
 	return a.storeAuthData(cr, resp)
 }
 
+// storeAuthData вычисляет мастел ключ
+// и сохвраняет его вместе с токеном в локальное хранилище.
 func (a *Auth) storeAuthData(cr dto.Credentials, resp dto.AuthResponse) error {
 	salt, err := base64.RawStdEncoding.DecodeString(resp.EncrSalt)
 	if err != nil {
