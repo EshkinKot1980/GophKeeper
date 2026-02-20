@@ -34,6 +34,13 @@ type SecretResponse struct {
 	Updated  time.Time     `json:"updated"`
 }
 
+type SecretInfo struct {
+	ID       uint64    `json:"id"`
+	DataType string    `json:"data_type"`
+	Name     string    `json:"name"`
+	Created  time.Time `json:"created"`
+}
+
 // MetaData метаданные секрата.
 type MetaData struct {
 	Name  string `json:"name"`

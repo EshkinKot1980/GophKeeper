@@ -25,4 +25,6 @@ type Client interface {
 	Upload(data dto.SecretRequest, token string) error
 	// Retrieve получает секрет пользователя с ервера
 	Retrieve(id uint64, token string) (dto.SecretResponse, error)
+	// InfoList получает информацию о всех секретах пользователя с сервера.
+	InfoList(token string) ([]dto.SecretInfo, error)
 }

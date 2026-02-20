@@ -18,6 +18,8 @@ type SecretRepository interface {
 	Create(ctx context.Context, secret entity.Secret) error
 	// GetForUser возвращает пользовательский секрет по secretID и userID.
 	GetForUser(ctx context.Context, secretID uint64, userID string) (entity.Secret, error)
+	// GetAlluUnencryptedByUser возвращает не зашифрованные данные для всех записей пользователя
+	GetAllUnencryptedByUser(ctx context.Context, userID string) ([]entity.SecretInfo, error)
 }
 
 // Secret сервис загрузки и отдачи секретов пользователя
@@ -38,16 +40,22 @@ func (s *Secret) Save(ctx context.Context, secret *dto.SecretRequest) error {
 		return srvErrors.ErrUnexpected
 	}
 
+	meta, err := json.Marshal(secret.Meta)
+	if err != nil {
+		s.logger.Error("failed encode secret metadata to json", err)
+		return srvErrors.ErrUnexpected
+	}
+
 	enity := entity.Secret{
 		UserID:        userID,
 		DataType:      secret.DataType,
 		Name:          secret.Name,
-		MetaData:      "[]", //TODO: ...
+		MetaData:      string(meta),
 		EncryptedKey:  secret.EncrData.Key,
 		EncryptedData: secret.EncrData.Data,
 	}
 
-	err := s.repository.Create(ctx, enity)
+	err = s.repository.Create(ctx, enity)
 	if err != nil {
 		s.logger.Error("failed create secret", err)
 		return srvErrors.ErrUnexpected
@@ -92,4 +100,33 @@ func (s *Secret) Secret(ctx context.Context, secretID uint64) (dto.SecretRespons
 			Data: entity.EncryptedData,
 		},
 	}, nil
+}
+
+// InfoList возвращает информацию о всех секретах пользователя.
+func (s *Secret) InfoList(ctx context.Context) ([]dto.SecretInfo, error) {
+	userID, ok := ctx.Value(middleware.KeyUserID).(string)
+	if !ok {
+		s.logger.Error("failed to get user id", srvErrors.ErrUnexpected)
+		return nil, srvErrors.ErrUnexpected
+	}
+
+	secrets, err := s.repository.GetAllUnencryptedByUser(ctx, userID)
+	if err != nil {
+		s.logger.Error("failed to get secret for user", err)
+		return nil, srvErrors.ErrUnexpected
+	}
+
+	var list []dto.SecretInfo
+	for _, secret := range secrets {
+		list = append(
+			list,
+			dto.SecretInfo{
+				ID:       secret.ID,
+				DataType: secret.DataType,
+				Name:     secret.Name,
+				Created:  secret.Created,
+			},
+		)
+	}
+	return list, nil
 }

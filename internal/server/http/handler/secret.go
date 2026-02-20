@@ -17,6 +17,8 @@ type SecretService interface {
 	Save(ctx context.Context, secret *dto.SecretRequest) error
 	// Secret возвращает секрет по secretID, если он принадлежит текущему пользователю.
 	Secret(ctx context.Context, secretID uint64) (dto.SecretResponse, error)
+	// InfoList возвращает информаци о всех секретах пользователя.
+	InfoList(ctx context.Context) ([]dto.SecretInfo, error)
 }
 
 // Secret обработчик запросов загрузки и отдачи секретов пользователя
@@ -69,4 +71,15 @@ func (s *Secret) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newJSONwriter(w, s.logger).write(secret, "secret", http.StatusOK)
+}
+
+// InfoList возвращает информацию о всех секретах пользователя.
+func (s *Secret) List(w http.ResponseWriter, r *http.Request) {
+	list, err := s.service.InfoList(r.Context())
+	if err != nil {
+		http.Error(w, statusText500, http.StatusInternalServerError)
+		return
+	}
+
+	newJSONwriter(w, s.logger).write(list, "secret info list", http.StatusOK)
 }

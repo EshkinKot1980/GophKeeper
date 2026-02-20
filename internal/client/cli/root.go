@@ -30,12 +30,14 @@ type SecretService interface {
 	// GetSecretAndInfo получает секрет пользователя с сервера по id,
 	// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
 	GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error)
+	// InfoList получает информацию о всех секретах пользователя с сервера.
+	InfoList() ([]dto.SecretInfo, error)
 }
 
 var (
 	cfg           *config.Config
 	authService   AuthService
-	secretServise SecretService
+	secretService SecretService
 )
 
 // Корневая команда приложения Cobra
@@ -62,7 +64,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		authService = service.NewAuth(httpClient, fileStorage)
-		secretServise = service.NewSecret(httpClient, fileStorage)
+		secretService = service.NewSecret(httpClient, fileStorage)
 
 		return nil
 	},

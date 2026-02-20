@@ -26,6 +26,7 @@ var (
 	ErrLoginFailed          = errors.New("login failed")
 	ErrSecretSendFailed     = errors.New("failed to send secret")
 	ErrSecretRetrieveFailed = errors.New("failed to retrieve secret")
+	ErrSecretInfoListFailed = errors.New("failed to retrieve secret ifo list")
 )
 
 type Client struct {
@@ -136,4 +137,26 @@ func (c *Client) Retrieve(id uint64, token string) (dto.SecretResponse, error) {
 	}
 
 	return secret, nil
+}
+
+// InfoList получает информацию о всех секретах пользователя с сервера.
+func (c *Client) InfoList(token string) ([]dto.SecretInfo, error) {
+	var list []dto.SecretInfo
+
+	req := c.client.R().
+		SetHeader("Authorization", "Bearer "+token).
+		SetResult(&list)
+
+	resp, err := req.Get(SecretPath)
+
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrSecretInfoListFailed, err)
+	} else if !resp.IsSuccess() {
+		if resp.StatusCode() == http.StatusUnauthorized {
+			return nil, fmt.Errorf("%w: authorization failed", ErrSecretInfoListFailed)
+		}
+		return nil, fmt.Errorf("%w: internal server error", ErrSecretInfoListFailed)
+	}
+
+	return list, nil
 }

@@ -68,6 +68,20 @@ func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error)
 	return secret, resp, nil
 }
 
+// InfoList получает информацию о всех секретах пользователя с сервера.
+func (s *Secret) InfoList() ([]dto.SecretInfo, error) {
+	token, err := s.storage.Token()
+	if err != nil {
+		return nil, fmt.Errorf("authorization failed :%w", err)
+	}
+
+	list, err := s.client.InfoList(token)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
 func ecryptData(masterKey, payload []byte) (dto.EncryptedData, error) {
 	var result dto.EncryptedData
 

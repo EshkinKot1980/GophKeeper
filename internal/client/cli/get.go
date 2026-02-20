@@ -15,7 +15,7 @@ var filePath string
 var getCmd = &cobra.Command{
 	Use:   "get <id>",
 	Short: "Get secret from system by ID",
-	Long:  `Download secret from the server and save it to disk for file type.`,
+	Long:  "Downloads secret from the server and save it to disk for file type.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id, err := strconv.ParseUint(args[0], 10, 64)
@@ -23,7 +23,7 @@ var getCmd = &cobra.Command{
 			return fmt.Errorf("ID must be a number")
 		}
 
-		secret, info, err := secretServise.GetSecretAndInfo(id)
+		secret, info, err := secretService.GetSecretAndInfo(id)
 		if err != nil {
 			return err
 		}

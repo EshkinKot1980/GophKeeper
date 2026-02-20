@@ -34,6 +34,21 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
+// InfoList mocks base method.
+func (m *MockClient) InfoList(token string) ([]dto.SecretInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfoList", token)
+	ret0, _ := ret[0].([]dto.SecretInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfoList indicates an expected call of InfoList.
+func (mr *MockClientMockRecorder) InfoList(token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfoList", reflect.TypeOf((*MockClient)(nil).InfoList), token)
+}
+
 // Login mocks base method.
 func (m *MockClient) Login(cr dto.Credentials) (dto.AuthResponse, error) {
 	m.ctrl.T.Helper()

@@ -64,3 +64,20 @@ func (s *Secret) GetForUser(ctx context.Context, secretID uint64, userID string)
 
 	return secret, nil
 }
+
+// GetAllUnencryptedByUser возвращает не зашифрованные данные для всех записей пользователя
+func (s *Secret) GetAllUnencryptedByUser(ctx context.Context, userID string) ([]entity.SecretInfo, error) {
+	query := `SELECT id, data_type, name, meta_data, created_at, updated_at FROM secrets WHERE user_id = $1`
+
+	rows, err := s.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to select from secrets: %w", err)
+	}
+
+	list, err := pgx.CollectRows(rows, pgx.RowToStructByName[entity.SecretInfo])
+	if err != nil {
+		return list, fmt.Errorf("failed to parse selected secrets: %w", err)
+	}
+
+	return list, nil
+}

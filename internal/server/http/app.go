@@ -9,7 +9,6 @@ import (
 	"github.com/EshkinKot1980/GophKeeper/internal/server/config"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/handler"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/logger"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -18,16 +17,21 @@ type AuthService interface {
 	middleware.AuthService
 }
 
+type Logger interface {
+	handler.Logger
+	middleware.HTTPloger
+}
+
 type SecretService = handler.SecretService
 
 type App struct {
 	config        *config.Config
-	logger        *logger.Logger
+	logger        Logger
 	authService   AuthService
 	secretService SecretService
 }
 
-func NewApp(c *config.Config, l *logger.Logger, a AuthService, s SecretService) *App {
+func NewApp(c *config.Config, l Logger, a AuthService, s SecretService) *App {
 	return &App{config: c, logger: l, authService: a, secretService: s}
 }
 
@@ -83,6 +87,7 @@ func (a *App) newRouter() http.Handler {
 			r.Route("/secret", func(r chi.Router) {
 				r.Post("/", secretHandler.Upload)
 				r.Get("/{id}", secretHandler.Get)
+				r.Get("/", secretHandler.List)
 			})
 		})
 	})

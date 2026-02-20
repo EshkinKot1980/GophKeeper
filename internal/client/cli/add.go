@@ -37,7 +37,7 @@ var credentialsCmd = &cobra.Command{
 			return
 		}
 
-		err = secretServise.Upload(
+		err = secretService.Upload(
 			dto.SecretRequest{
 				Name:     name,
 				DataType: dto.SecretTypeCredentials,

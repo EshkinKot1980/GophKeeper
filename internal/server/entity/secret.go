@@ -13,3 +13,12 @@ type Secret struct {
 	Created       time.Time `db:"created_at"`
 	Updated       time.Time `db:"updated_at"`
 }
+
+type SecretInfo struct {
+	ID       uint64    `db:"id"`
+	DataType string    `db:"data_type"`
+	Name     string    `db:"name"`
+	MetaData string    `db:"meta_data"`
+	Created  time.Time `db:"created_at"`
+	Updated  time.Time `db:"updated_at"`
+}
