@@ -45,6 +45,8 @@ type Prompt interface {
 	Credentials() (dto.Credentials, error)
 	// Overwrite() запрашивает у пользователя нужно ли файл переписать
 	Overwrite(fileName string) bool
+	// Text() ввод произвольного многострочного текста
+	Text() (string, error)
 }
 
 var (

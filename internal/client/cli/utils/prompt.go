@@ -61,6 +61,20 @@ func (p *Prompt) Credentials() (dto.Credentials, error) {
 	return cr, nil
 }
 
+// Text() ввод произвольного многострочного текста
+func (p *Prompt) Text() (string, error) {
+	var text strings.Builder
+	scanner := bufio.NewScanner(p.in)
+	fmt.Fprintln(p.out, "Enter text. Press Ctrl+D (Unix/Linux) or Ctrl+Z (Windows) on a new line when finished:")
+	for scanner.Scan() {
+		text.WriteString(scanner.Text() + "\n")
+	}
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("failed to read standard input: %w", err)
+	}
+	return text.String(), nil
+}
+
 // Overwrite() запрашивает у пользователя нужно ли файл переписать
 func (p *Prompt) Overwrite(fileName string) bool {
 	label := fmt.Sprintf("File \"%s\" allready exist, overwrite it Y/n? [Y]: ", fileName)

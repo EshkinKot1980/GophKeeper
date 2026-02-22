@@ -45,6 +45,8 @@ func get(out io.Writer, argID string) error {
 		return outputCredentials(out, secret, info)
 	case dto.SecretTypeFile:
 		return saveFile(secret, info)
+	case dto.SecretTypeText:
+		return outputText(out, secret, info)
 	}
 
 	return fmt.Errorf("unsuported secret type: %s", info.DataType)
@@ -121,6 +123,16 @@ func saveFile(secret []byte, info dto.SecretInfo) error {
 	if err != nil {
 		return fmt.Errorf("failed to to save file: %w", err)
 	}
+
+	return nil
+}
+
+func outputText(out io.Writer, secret []byte, info dto.SecretInfo) error {
+	fmt.Fprintln(out, info.Name)
+	fmt.Fprintln(out, "--------------------------------")
+	fmt.Fprintln(out, string(secret))
+	fmt.Fprintln(out, "--------------------------------")
+	fmt.Fprintln(out, "created:", info.Created.Format("2006-01-02 15:04:05"))
 
 	return nil
 }

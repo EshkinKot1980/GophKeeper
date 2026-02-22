@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -31,7 +32,15 @@ var credentialsCmd = &cobra.Command{
 var fileCmd = &cobra.Command{
 	Use:   "file <file_path>",
 	Short: "Adds a file to the system",
-	RunE:  addFile,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return addFile(os.Stdout, args[0])
+	},
+}
+
+var textCmd = &cobra.Command{
+	Use:   "text",
+	Short: "Adds text data to the system",
+	RunE:  addText,
 }
 
 func addCredentials(cmd *cobra.Command, args []string) error {
@@ -64,9 +73,7 @@ func addCredentials(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func addFile(cmd *cobra.Command, args []string) error {
-	path := args[0]
-
+func addFile(out io.Writer, path string) error {
 	// Проверяем доступность и размер файла
 	info, err := os.Stat(path)
 	if err != nil {
@@ -104,7 +111,7 @@ func addFile(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	fmt.Println("sending the file to the server")
+	fmt.Fprintln(out, "sending the file to the server")
 	err = secretService.Upload(
 		dto.SecretRequest{
 			Name:     name,
@@ -119,8 +126,35 @@ func addFile(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func addText(cmd *cobra.Command, args []string) error {
+	name, err := prompt.SecretName()
+	if err != nil {
+		return err
+	}
+
+	text, err := prompt.Text()
+	if err != nil {
+		return err
+	}
+
+	err = secretService.Upload(
+		dto.SecretRequest{
+			Name:     name,
+			DataType: dto.SecretTypeText,
+			Meta:     []dto.MetaData{},
+		},
+		[]byte(text),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send data to server: %w", err)
+	}
+
+	return nil
+}
+
 func init() {
 	addCmd.AddCommand(credentialsCmd)
 	addCmd.AddCommand(fileCmd)
+	addCmd.AddCommand(textCmd)
 	rootCmd.AddCommand(addCmd)
 }
