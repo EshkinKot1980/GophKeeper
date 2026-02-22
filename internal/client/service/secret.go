@@ -42,30 +42,38 @@ func (s *Secret) Upload(secret dto.SecretRequest, data []byte) error {
 }
 
 // GetSecretAndInfo получает секрет пользователя с сервера по id,
-// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
-func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error) {
-	var resp dto.SecretResponse
+// возвращает расшиврованные данные в виде []byte и  информацию о секрете
+func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretInfo, error) {
+	var info dto.SecretInfo
 
 	masterKey, err := s.storage.Key()
 	if err != nil {
-		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+		return nil, info, fmt.Errorf("authorization failed :%w", err)
 	}
 	token, err := s.storage.Token()
 	if err != nil {
-		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+		return nil, info, fmt.Errorf("authorization failed :%w", err)
 	}
 
-	resp, err = s.client.Retrieve(id, token)
+	resp, err := s.client.Retrieve(id, token)
 	if err != nil {
-		return nil, resp, err
+		return nil, info, err
 	}
 
 	secret, err := deryptData(masterKey, &resp.EncrData)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to decrypt secret :%w", err)
+		return nil, info, fmt.Errorf("failed to decrypt secret :%w", err)
 	}
 
-	return secret, resp, nil
+	info = dto.SecretInfo{
+		ID:       resp.ID,
+		DataType: resp.DataType,
+		Name:     resp.Name,
+		Meta:     resp.Meta,
+		Created:  resp.Created,
+	}
+
+	return secret, info, nil
 }
 
 // InfoList получает информацию о всех секретах пользователя с сервера.

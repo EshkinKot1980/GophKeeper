@@ -3,57 +3,124 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	"github.com/spf13/cobra"
 )
 
+const (
+	// Название записи метаданных для имени файла
+	MetaFileName = "FileName"
+	// Название записи метаданных для директории файла (абсолютный путь)
+	MetaFilePath = "FilePath"
+)
+
 var addCmd = &cobra.Command{
 	Use:   "add",
-	Short: "Add secret to system",
+	Short: "Adds a secret to the system",
 }
 
 var credentialsCmd = &cobra.Command{
 	Use:   "credentials",
-	Short: "Add credentials to system",
-	Run: func(cmd *cobra.Command, args []string) {
-		name := prompt("Enter secret name: ")
-		if name == "" {
-			fmt.Println("name can not be empty")
-			return
-		}
+	Short: "Adds credentials to the system",
+	RunE:  addCredentials,
+}
 
-		login := prompt("login: ")
-		password := promptPassword("password: ")
+var fileCmd = &cobra.Command{
+	Use:   "file <file_path>",
+	Short: "Adds a file to the system",
+	RunE:  addFile,
+}
 
-		if login == "" || password == "" {
-			fmt.Println("login and password can not be empty")
-			return
-		}
+func addCredentials(cmd *cobra.Command, args []string) error {
+	name, err := prompt.SecretName()
+	if err != nil {
+		return err
+	}
 
-		data, err := json.Marshal(dto.Credentials{Login: login, Password: password})
-		if err != nil {
-			fmt.Printf("failed to decote credentials to json: %s\n", err.Error())
-			return
-		}
+	credentials, err := prompt.Credentials()
+	if err != nil {
+		return err
+	}
 
-		err = secretService.Upload(
-			dto.SecretRequest{
-				Name:     name,
-				DataType: dto.SecretTypeCredentials,
-				Meta:     []dto.MetaData{},
-			},
-			data,
-		)
-		if err != nil {
-			fmt.Printf("failed to send data to server: %s\n", err.Error())
-			return
-		}
-		// fmt.Println(string(data))
-	},
+	data, err := json.Marshal(credentials)
+	if err != nil {
+		return fmt.Errorf("failed to encode credentials to json: %w", err)
+	}
+
+	err = secretService.Upload(
+		dto.SecretRequest{
+			Name:     name,
+			DataType: dto.SecretTypeCredentials,
+			Meta:     []dto.MetaData{},
+		},
+		data,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send data to server: %w", err)
+	}
+	return nil
+}
+
+func addFile(cmd *cobra.Command, args []string) error {
+	path := args[0]
+
+	// Проверяем доступность и размер файла
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	fileName := info.Name()
+	if info.IsDir() {
+		return fmt.Errorf("failed add file: the file \"%s\" is directory", info.Name())
+	}
+
+	size := info.Size()
+	if size > cfg.FileMaxSize {
+		return fmt.Errorf("file size (%d bytes) exceeds the limit of %d bytes", size, cfg.FileMaxSize)
+	}
+
+	// Формируем метаданные
+	meta := []dto.MetaData{}
+	meta = append(meta, dto.MetaData{Name: MetaFileName, Value: fileName})
+
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute file path: %w", err)
+	}
+	meta = append(meta, dto.MetaData{Name: MetaFilePath, Value: filepath.Dir(absPath)})
+
+	name, err := prompt.SecretName()
+	if err != nil {
+		return err
+	}
+
+	// Читаем файл и отправляем в зашифрованном виде на сервер
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	fmt.Println("sending the file to the server")
+	err = secretService.Upload(
+		dto.SecretRequest{
+			Name:     name,
+			DataType: dto.SecretTypeFile,
+			Meta:     meta,
+		},
+		data,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to send data to server: %w", err)
+	}
+	return nil
 }
 
 func init() {
 	addCmd.AddCommand(credentialsCmd)
+	addCmd.AddCommand(fileCmd)
 	rootCmd.AddCommand(addCmd)
 }

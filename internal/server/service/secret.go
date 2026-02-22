@@ -118,12 +118,20 @@ func (s *Secret) InfoList(ctx context.Context) ([]dto.SecretInfo, error) {
 
 	var list []dto.SecretInfo
 	for _, secret := range secrets {
+		var meta []dto.MetaData
+		err = json.Unmarshal([]byte(secret.MetaData), &meta)
+		if err != nil {
+			s.logger.Error("failed to unmarhal metadata", err)
+			return nil, srvErrors.ErrUnexpected
+		}
+
 		list = append(
 			list,
 			dto.SecretInfo{
 				ID:       secret.ID,
 				DataType: secret.DataType,
 				Name:     secret.Name,
+				Meta:     meta,
 				Created:  secret.Created,
 			},
 		)
