@@ -51,7 +51,11 @@ func (s *Secret) Create(ctx context.Context, secret entity.Secret) error {
 func (s *Secret) GetForUser(ctx context.Context, secretID uint64, userID string) (entity.Secret, error) {
 	var secret entity.Secret
 
-	query := `SELECT * FROM secrets WHERE id = $1 AND user_id = $2`
+	query := `
+		SELECT 
+			id, user_id, data_type, name, meta_data, encrypted_data, encrypted_key, created_at, updated_at 
+		FROM secrets 
+		WHERE id = $1 AND user_id = $2`
 	rows, err := s.pool.Query(ctx, query, secretID, userID)
 	if err != nil {
 		return secret, fmt.Errorf("failed to select from secrets: %w", err)

@@ -157,8 +157,9 @@ func TestAuth_Register(t *testing.T) {
 			repository := test.rSetup(t)
 			logger := test.lSetup(t)
 			ctx := context.Background()
+			tokenTTL := time.Hour
 
-			authService := NewAuth(repository, logger, pub, priv)
+			authService := NewAuth(repository, logger, pub, priv, tokenTTL)
 			resp, err := authService.Register(ctx, test.credentials)
 
 			assert.ErrorIs(t, err, test.want.err, "Register user error")
@@ -310,8 +311,9 @@ func TestAuth_Login(t *testing.T) {
 			repository := test.rSetup(t)
 			logger := test.lSetup(t)
 			ctx := context.Background()
+			tokenTTL := time.Hour
 
-			authService := NewAuth(repository, logger, pub, priv)
+			authService := NewAuth(repository, logger, pub, priv, tokenTTL)
 			resp, err := authService.Login(ctx, test.credentials)
 
 			assert.ErrorIs(t, err, test.want.err, "Login user error")
@@ -461,8 +463,9 @@ func TestAuth_User(t *testing.T) {
 			repository := test.rSetup(t)
 			logger := test.lSetup(t)
 			ctx := context.Background()
+			tokenTTL := time.Hour
 
-			authService := NewAuth(repository, logger, pub, priv)
+			authService := NewAuth(repository, logger, pub, priv, tokenTTL)
 			user, err := authService.User(ctx, test.token)
 
 			assert.Equal(t, test.want.user, user, "Get user entity")

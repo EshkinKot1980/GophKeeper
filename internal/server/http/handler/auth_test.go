@@ -29,6 +29,12 @@ func TestAuth_Register(t *testing.T) {
 		dto.CredentialsLoginMaxLen,
 	)
 
+	var longPassword strings.Builder
+	for range 100 {
+		longPassword.WriteString("p")
+	}
+	tooLargeBody := `{"login":"testLogin", "password":"` + longPassword.String() + `"}`
+
 	type want struct {
 		code int
 		body string
@@ -59,6 +65,18 @@ func TestAuth_Register(t *testing.T) {
 		{
 			name: "negative_bad_json",
 			body: `not valid jsson`,
+			setup: func(t *testing.T) AuthService {
+				ctrl := gomock.NewController(t)
+				return mocks.NewMockAuthService(ctrl)
+			},
+			want: want{
+				code: http.StatusBadRequest,
+				body: "invalid credentials format",
+			},
+		},
+		{
+			name: "negative_to_large_body",
+			body: tooLargeBody,
 			setup: func(t *testing.T) AuthService {
 				ctrl := gomock.NewController(t)
 				return mocks.NewMockAuthService(ctrl)
@@ -152,11 +170,12 @@ func TestAuth_Register(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	logger := mocks.NewMockLogger(ctrl)
+	bodyMaxSize := int64(100)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			service := test.setup(t)
-			handler := NewAuth(service, logger)
+			handler := NewAuth(service, logger, bodyMaxSize)
 
 			reqBody := []byte(test.body)
 			r := httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(reqBody))
@@ -184,6 +203,12 @@ func TestAuth_Login(t *testing.T) {
 		".eyJleHAiOjE3NTg0NTk0OTMsImp0aSI6IjEifQ._mX-s6U9_iq4YhnQ5HOYbJAz7P8ly8BD_BufPYx2Kms"
 	salt := "duBXKxwaWXfhgXBQrrwdtQ"
 	successBody := `{"token":"` + token + `","encr_salt":"` + salt + `"}`
+
+	var longPassword strings.Builder
+	for range 100 {
+		longPassword.WriteString("p")
+	}
+	tooLargeBody := `{"login":"testLogin", "password":"` + longPassword.String() + `"}`
 
 	type want struct {
 		code int
@@ -215,6 +240,18 @@ func TestAuth_Login(t *testing.T) {
 		{
 			name: "negative_bad_json",
 			body: `not valid jsson`,
+			setup: func(t *testing.T) AuthService {
+				ctrl := gomock.NewController(t)
+				return mocks.NewMockAuthService(ctrl)
+			},
+			want: want{
+				code: http.StatusBadRequest,
+				body: "invalid credentials format",
+			},
+		},
+		{
+			name: "negative_to_large_body",
+			body: tooLargeBody,
 			setup: func(t *testing.T) AuthService {
 				ctrl := gomock.NewController(t)
 				return mocks.NewMockAuthService(ctrl)
@@ -260,11 +297,12 @@ func TestAuth_Login(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	logger := mocks.NewMockLogger(ctrl)
+	bodyMaxSize := int64(100)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			service := test.setup(t)
-			handler := NewAuth(service, logger)
+			handler := NewAuth(service, logger, bodyMaxSize)
 
 			reqBody := []byte(test.body)
 			r := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(reqBody))

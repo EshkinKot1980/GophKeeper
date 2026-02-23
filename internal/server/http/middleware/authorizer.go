@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
+	srvContext "github.com/EshkinKot1980/GophKeeper/internal/server/service/context"
 	srvErrors "github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 )
 
@@ -18,10 +19,6 @@ type AuthService interface {
 type Authorizer struct {
 	service AuthService
 }
-
-type ContextKey string
-
-const KeyUserID ContextKey = "userID"
 
 func NewAuthorizer(srv AuthService) *Authorizer {
 	return &Authorizer{service: srv}
@@ -46,7 +43,7 @@ func (a *Authorizer) Authorize(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), KeyUserID, user.ID)
+		ctx := srvContext.SetUserID(r.Context(), user.ID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 

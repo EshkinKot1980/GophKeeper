@@ -20,7 +20,7 @@ type Config struct {
 	// Адрес https cервера в формате "host:port".
 	ServerAddr string `yaml:"https_addr" env:"SERVER_ADDR" env-default:"localhost:8443"`
 	// Разрешить ли самодписанные сертификаты для https соединения с сервером
-	AllowSelfSignedCert bool `yaml:"allow_self_signed_cert" env:"ALLOW_SELF_SIGNED_CERT" env-default:"true"`
+	AllowSelfSignedCert bool `yaml:"allow_self_signed_cert" env:"ALLOW_SELF_SIGNED_CERT" env-default:"false"`
 	// Максимальный размер файла загрузки в систему в байтах
 	FileMaxSize int64
 }

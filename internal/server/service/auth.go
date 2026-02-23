@@ -36,10 +36,17 @@ type Auth struct {
 	logger     Logger
 	pub        *rsa.PublicKey
 	priv       *rsa.PrivateKey
+	tokenTTL   time.Duration
 }
 
-func NewAuth(r UserRepository, l Logger, jwtPub *rsa.PublicKey, jwtPriv *rsa.PrivateKey) *Auth {
-	return &Auth{repository: r, logger: l, pub: jwtPub, priv: jwtPriv}
+func NewAuth(
+	r UserRepository,
+	l Logger,
+	jwtPub *rsa.PublicKey,
+	jwtPriv *rsa.PrivateKey,
+	tokenTTL time.Duration,
+) *Auth {
+	return &Auth{repository: r, logger: l, pub: jwtPub, priv: jwtPriv, tokenTTL: tokenTTL}
 }
 
 // Register регистрация пользователя по логину с паролем
@@ -199,7 +206,7 @@ func (a *Auth) generateToken(u entity.User) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodRS256,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenTTL)),
 			ID:        u.ID,
 		},
 	)
