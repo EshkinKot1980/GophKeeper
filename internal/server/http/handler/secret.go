@@ -42,7 +42,7 @@ func (s *Secret) Upload(w http.ResponseWriter, r *http.Request) {
 
 	err := s.service.Save(r.Context(), &secret)
 	if err != nil {
-		if errors.Is(err, srvErrors.ErrSecretInalidData) {
+		if errors.Is(err, srvErrors.ErrSecretInvalidData) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			http.Error(w, statusText500, http.StatusInternalServerError)
