@@ -19,12 +19,13 @@ type AuthService interface {
 
 // Auth обработчик запросов регистрации и логина
 type Auth struct {
-	service AuthService
-	logger  Logger
+	service     AuthService
+	logger      Logger
+	bodyMaxSize int64
 }
 
-func NewAuth(srv AuthService, l Logger) *Auth {
-	return &Auth{service: srv, logger: l}
+func NewAuth(srv AuthService, l Logger, bodyMaxSize int64) *Auth {
+	return &Auth{service: srv, logger: l, bodyMaxSize: bodyMaxSize}
 }
 
 // Register регистрирует пользователя по логину и паролю.
@@ -33,7 +34,8 @@ func NewAuth(srv AuthService, l Logger) *Auth {
 func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 	var credentials dto.Credentials
 
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+	body := http.MaxBytesReader(w, r.Body, h.bodyMaxSize)
+	if err := json.NewDecoder(body).Decode(&credentials); err != nil {
 		http.Error(w, "invalid credentials format", http.StatusBadRequest)
 		return
 	}
@@ -61,7 +63,8 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	var credentials dto.Credentials
 
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+	body := http.MaxBytesReader(w, r.Body, h.bodyMaxSize)
+	if err := json.NewDecoder(body).Decode(&credentials); err != nil {
 		http.Error(w, "invalid credentials format", http.StatusBadRequest)
 		return
 	}

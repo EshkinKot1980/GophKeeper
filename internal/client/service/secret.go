@@ -3,10 +3,17 @@ package service
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/crypto"
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
+)
+
+var (
+	ErrAuthorizationFailed    = errors.New("authorization failed")
+	ErrSecretEncryptionFailed = errors.New("failed to encrypt secret")
+	ErrSecretDecryptionFailed = errors.New("failed to decrypt secret")
 )
 
 // Secret сервис для работы с секретными данными пользователя
@@ -25,54 +32,62 @@ func NewSecret(c Client, s Storage) *Secret {
 func (s *Secret) Upload(secret dto.SecretRequest, data []byte) error {
 	masterKey, err := s.storage.Key()
 	if err != nil {
-		return fmt.Errorf("authorization failed :%w", err)
+		return fmt.Errorf("%w: %w", ErrAuthorizationFailed, err)
 	}
 
-	secret.EncrData, err = ecryptData(masterKey, data)
+	secret.EncrData, err = encryptData(masterKey, data)
 	if err != nil {
-		return fmt.Errorf("failed to ecrypt secret :%w", err)
+		return fmt.Errorf("%w: %w", ErrSecretEncryptionFailed, err)
 	}
 
 	token, err := s.storage.Token()
 	if err != nil {
-		return fmt.Errorf("authorization failed :%w", err)
+		return fmt.Errorf("%w: %w", ErrAuthorizationFailed, err)
 	}
 
 	return s.client.Upload(secret, token)
 }
 
 // GetSecretAndInfo получает секрет пользователя с сервера по id,
-// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
-func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error) {
-	var resp dto.SecretResponse
+// возвращает расшиврованные данные в виде []byte и  информацию о секрете
+func (s *Secret) GetSecretAndInfo(id uint64) ([]byte, dto.SecretInfo, error) {
+	var info dto.SecretInfo
 
 	masterKey, err := s.storage.Key()
 	if err != nil {
-		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+		return nil, info, fmt.Errorf("%w: %w", ErrAuthorizationFailed, err)
 	}
 	token, err := s.storage.Token()
 	if err != nil {
-		return nil, resp, fmt.Errorf("authorization failed :%w", err)
+		return nil, info, fmt.Errorf("%w: %w", ErrAuthorizationFailed, err)
 	}
 
-	resp, err = s.client.Retrieve(id, token)
+	resp, err := s.client.Retrieve(id, token)
 	if err != nil {
-		return nil, resp, err
+		return nil, info, err
 	}
 
 	secret, err := deryptData(masterKey, &resp.EncrData)
 	if err != nil {
-		return nil, resp, fmt.Errorf("failed to decrypt secret :%w", err)
+		return nil, info, fmt.Errorf("%w: %w", ErrSecretDecryptionFailed, err)
 	}
 
-	return secret, resp, nil
+	info = dto.SecretInfo{
+		ID:       resp.ID,
+		DataType: resp.DataType,
+		Name:     resp.Name,
+		Meta:     resp.Meta,
+		Created:  resp.Created,
+	}
+
+	return secret, info, nil
 }
 
 // InfoList получает информацию о всех секретах пользователя с сервера.
 func (s *Secret) InfoList() ([]dto.SecretInfo, error) {
 	token, err := s.storage.Token()
 	if err != nil {
-		return nil, fmt.Errorf("authorization failed :%w", err)
+		return nil, fmt.Errorf("%w: %w", ErrAuthorizationFailed, err)
 	}
 
 	list, err := s.client.InfoList(token)
@@ -82,7 +97,7 @@ func (s *Secret) InfoList() ([]dto.SecretInfo, error) {
 	return list, nil
 }
 
-func ecryptData(masterKey, payload []byte) (dto.EncryptedData, error) {
+func encryptData(masterKey, payload []byte) (dto.EncryptedData, error) {
 	var result dto.EncryptedData
 
 	key, err := crypto.GenerateRandomBytes(32)

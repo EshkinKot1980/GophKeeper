@@ -32,7 +32,7 @@ func (jw *jsonWriter) write(value any, valueName string, stasusCode int) {
 	jw.writer.Header().Set("Content-Type", "application/json")
 	jw.writer.WriteHeader(stasusCode)
 
-	_, err = jw.writer.Write([]byte(body))
+	_, err = jw.writer.Write(body)
 	if err != nil {
 		jw.logger.Error("failed to write body", err)
 	}

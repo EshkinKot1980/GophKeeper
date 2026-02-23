@@ -12,6 +12,7 @@ import (
 
 	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware/mocks"
+	srvContext "github.com/EshkinKot1980/GophKeeper/internal/server/service/context"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 )
 
@@ -103,7 +104,8 @@ func TestAuthorizer_Authorize(t *testing.T) {
 			}
 
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				userID := r.Context().Value(KeyUserID)
+				userID, err := srvContext.UserID(r.Context())
+				assert.Nil(t, err, "Get user ID from context")
 				assert.Equal(t, test.want.userID, userID, "Handler get userID")
 				w.WriteHeader(http.StatusOK)
 			})

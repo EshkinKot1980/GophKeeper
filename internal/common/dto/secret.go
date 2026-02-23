@@ -7,6 +7,7 @@ const (
 	SecretTypeCard        = "card"
 	SecretTypeFile        = "file"
 	SecretTypeText        = "text"
+	SecretNameMaxLen      = 64
 )
 
 // SecretSupportedTypes доступные типы секретов.
@@ -35,10 +36,11 @@ type SecretResponse struct {
 }
 
 type SecretInfo struct {
-	ID       uint64    `json:"id"`
-	DataType string    `json:"data_type"`
-	Name     string    `json:"name"`
-	Created  time.Time `json:"created"`
+	ID       uint64     `json:"id"`
+	DataType string     `json:"data_type"`
+	Name     string     `json:"name"`
+	Meta     []MetaData `json:"meta"`
+	Created  time.Time  `json:"created"`
 }
 
 // MetaData метаданные секрата.

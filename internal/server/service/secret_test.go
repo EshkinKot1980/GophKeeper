@@ -10,16 +10,16 @@ import (
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware"
 
 	repErrors "github.com/EshkinKot1980/GophKeeper/internal/server/repository/errors"
+	srvContext "github.com/EshkinKot1980/GophKeeper/internal/server/service/context"
 	srvErrors "github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/service/mocks"
 )
 
 func TestSecret_Save(t *testing.T) {
 	userID := "1ed655b6-0738-4162-a34a-34257c0dc106"
-	goodCtx := context.WithValue(context.Background(), middleware.KeyUserID, userID)
+	goodCtx := srvContext.SetUserID(context.Background(), userID)
 	requestDTO := dto.SecretRequest{}
 
 	tests := []struct {
@@ -100,7 +100,7 @@ func TestSecret_Save(t *testing.T) {
 
 func TestSecret_Secret(t *testing.T) {
 	userID := "1ed655b6-0738-4162-a34a-34257c0dc106"
-	goodCtx := context.WithValue(context.Background(), middleware.KeyUserID, userID)
+	goodCtx := srvContext.SetUserID(context.Background(), userID)
 
 	type want struct {
 		secret dto.SecretResponse
@@ -238,7 +238,7 @@ func TestSecret_Secret(t *testing.T) {
 
 func TestSecret_InfoList(t *testing.T) {
 	userID := "1ed655b6-0738-4162-a34a-34257c0dc106"
-	goodCtx := context.WithValue(context.Background(), middleware.KeyUserID, userID)
+	goodCtx := srvContext.SetUserID(context.Background(), userID)
 
 	type want struct {
 		list []dto.SecretInfo
@@ -268,7 +268,7 @@ func TestSecret_InfoList(t *testing.T) {
 				return mocks.NewMockLogger(ctrl)
 			},
 			want: want{
-				list: []dto.SecretInfo{{}},
+				list: []dto.SecretInfo{{Meta: []dto.MetaData{}}},
 			},
 		},
 		{
@@ -305,6 +305,28 @@ func TestSecret_InfoList(t *testing.T) {
 				logger := mocks.NewMockLogger(ctrl)
 				logger.EXPECT().
 					Error("failed to get secret for user", gomock.All())
+				return logger
+			},
+			want: want{
+				err: srvErrors.ErrUnexpected,
+			},
+		},
+		{
+			name: "bad_meta_data",
+			ctx:  goodCtx,
+			rSetup: func(t *testing.T) SecretRepository {
+				ctrl := gomock.NewController(t)
+				repository := mocks.NewMockSecretRepository(ctrl)
+				repository.EXPECT().
+					GetAllUnencryptedByUser(gomock.All(), gomock.All()).
+					Return([]entity.SecretInfo{{MetaData: ""}}, nil)
+				return repository
+			},
+			lSetup: func(t *testing.T) Logger {
+				ctrl := gomock.NewController(t)
+				logger := mocks.NewMockLogger(ctrl)
+				logger.EXPECT().
+					Error("failed to unmarhal metadata", gomock.All())
 				return logger
 			},
 			want: want{

@@ -40,6 +40,11 @@ func (l *Logger) Sync() {
 	l.logger.Sync()
 }
 
+// Логирование информационных сообщений.
+func (l *Logger) Info(message string) {
+	l.logger.Info(message)
+}
+
 // Логирование ошибки.
 func (l *Logger) Error(message string, err error) {
 	l.logger.Error(message, zap.Error(err))

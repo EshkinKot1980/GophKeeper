@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/EshkinKot1980/GophKeeper/internal/client/cli/utils"
 	"github.com/EshkinKot1980/GophKeeper/internal/client/config"
 	"github.com/EshkinKot1980/GophKeeper/internal/client/http"
 	"github.com/EshkinKot1980/GophKeeper/internal/client/service"
@@ -28,16 +29,31 @@ type SecretService interface {
 	// Принимает частино заполненный dto.SecretRequest и данные, которые нужно зашифровать.
 	Upload(secret dto.SecretRequest, data []byte) error
 	// GetSecretAndInfo получает секрет пользователя с сервера по id,
-	// возвращает расшиврованные данные в виде []byte и dto.SecretResponse с информацией о секрете
-	GetSecretAndInfo(id uint64) ([]byte, dto.SecretResponse, error)
+	// возвращает расшиврованные данные в виде []byte и информацию о секрете
+	GetSecretAndInfo(id uint64) ([]byte, dto.SecretInfo, error)
 	// InfoList получает информацию о всех секретах пользователя с сервера.
 	InfoList() ([]dto.SecretInfo, error)
+}
+
+// Prompt обслуживает пользовательский ввод
+type Prompt interface {
+	// SecretName ввод названия секрета
+	SecretName() (string, error)
+	// RegisterCredentials ввод учетных данных для регистрации
+	RegisterCredentials() (dto.Credentials, error)
+	// Credentials ввод учетных данных для входа или сохранения в системе
+	Credentials() (dto.Credentials, error)
+	// Overwrite() запрашивает у пользователя нужно ли файл переписать
+	Overwrite(fileName string) bool
+	// Text() ввод произвольного многострочного текста
+	Text() (string, error)
 }
 
 var (
 	cfg           *config.Config
 	authService   AuthService
 	secretService SecretService
+	prompt        Prompt
 )
 
 // Корневая команда приложения Cobra
@@ -65,6 +81,7 @@ var rootCmd = &cobra.Command{
 
 		authService = service.NewAuth(httpClient, fileStorage)
 		secretService = service.NewSecret(httpClient, fileStorage)
+		prompt = utils.NewPrompt()
 
 		return nil
 	},

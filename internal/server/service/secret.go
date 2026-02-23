@@ -8,8 +8,8 @@ import (
 
 	"github.com/EshkinKot1980/GophKeeper/internal/common/dto"
 	"github.com/EshkinKot1980/GophKeeper/internal/server/entity"
-	"github.com/EshkinKot1980/GophKeeper/internal/server/http/middleware"
 	repErrors "github.com/EshkinKot1980/GophKeeper/internal/server/repository/errors"
+	srvContext "github.com/EshkinKot1980/GophKeeper/internal/server/service/context"
 	srvErrors "github.com/EshkinKot1980/GophKeeper/internal/server/service/errors"
 )
 
@@ -34,9 +34,9 @@ func NewSecret(l Logger, s SecretRepository) *Secret {
 
 // Save сохраняет секрет на сервере
 func (s *Secret) Save(ctx context.Context, secret *dto.SecretRequest) error {
-	userID, ok := ctx.Value(middleware.KeyUserID).(string)
-	if !ok {
-		s.logger.Error("failed to get user id", srvErrors.ErrUnexpected)
+	userID, err := srvContext.UserID(ctx)
+	if err != nil {
+		s.logger.Error("failed to get user id", err)
 		return srvErrors.ErrUnexpected
 	}
 
@@ -66,9 +66,9 @@ func (s *Secret) Save(ctx context.Context, secret *dto.SecretRequest) error {
 
 // Secret возвращает секрет по secretID, если он принадлежит текущему пользователю.
 func (s *Secret) Secret(ctx context.Context, secretID uint64) (dto.SecretResponse, error) {
-	userID, ok := ctx.Value(middleware.KeyUserID).(string)
-	if !ok {
-		s.logger.Error("failed to get user id", srvErrors.ErrUnexpected)
+	userID, err := srvContext.UserID(ctx)
+	if err != nil {
+		s.logger.Error("failed to get user id", err)
 		return dto.SecretResponse{}, srvErrors.ErrUnexpected
 	}
 
@@ -104,9 +104,9 @@ func (s *Secret) Secret(ctx context.Context, secretID uint64) (dto.SecretRespons
 
 // InfoList возвращает информацию о всех секретах пользователя.
 func (s *Secret) InfoList(ctx context.Context) ([]dto.SecretInfo, error) {
-	userID, ok := ctx.Value(middleware.KeyUserID).(string)
-	if !ok {
-		s.logger.Error("failed to get user id", srvErrors.ErrUnexpected)
+	userID, err := srvContext.UserID(ctx)
+	if err != nil {
+		s.logger.Error("failed to get user id", err)
 		return nil, srvErrors.ErrUnexpected
 	}
 
@@ -118,12 +118,20 @@ func (s *Secret) InfoList(ctx context.Context) ([]dto.SecretInfo, error) {
 
 	var list []dto.SecretInfo
 	for _, secret := range secrets {
+		var meta []dto.MetaData
+		err = json.Unmarshal([]byte(secret.MetaData), &meta)
+		if err != nil {
+			s.logger.Error("failed to unmarhal metadata", err)
+			return nil, srvErrors.ErrUnexpected
+		}
+
 		list = append(
 			list,
 			dto.SecretInfo{
 				ID:       secret.ID,
 				DataType: secret.DataType,
 				Name:     secret.Name,
+				Meta:     meta,
 				Created:  secret.Created,
 			},
 		)
