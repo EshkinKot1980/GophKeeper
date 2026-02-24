@@ -28,16 +28,12 @@ var getCmd = &cobra.Command{
 func get(out io.Writer, argID string) error {
 	id, err := strconv.ParseUint(argID, 10, 64)
 	if err != nil {
-		return fmt.Errorf("ID must be a number")
+		return fmt.Errorf("id must be a number")
 	}
 
 	secret, info, err := secretService.GetSecretAndInfo(id)
 	if err != nil {
 		return err
-	}
-
-	if info.DataType == dto.SecretTypeCredentials {
-		return outputCredentials(out, secret, info)
 	}
 
 	switch info.DataType {
@@ -87,13 +83,9 @@ func saveFile(secret []byte, info dto.SecretInfo) error {
 		}
 		// если файл не существует, проверяем существует ли директория его содержащая
 		fileDir := filepath.Dir(filePath)
-		dirInfo, err := os.Stat(fileDir)
 
-		if err != nil {
+		if _, err := os.Stat(fileDir); err != nil {
 			return fmt.Errorf("failed to spot output directory")
-		}
-		if !dirInfo.IsDir() {
-			return fmt.Errorf("invalid output directory \"%s\"", fileDir)
 		}
 		//директория существует - оставляем путь к файлу как есть
 	} else {
