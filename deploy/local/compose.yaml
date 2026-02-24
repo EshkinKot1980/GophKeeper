@@ -15,8 +15,11 @@ services:
       # - /etc/shadow:/etc/shadow:ro
     # user: 1000:1000
     environment:
-      RUN_ADDRESS: :8443
-      DATABASE_URI: postgres://keeperuser:keeperpass@gophkeeper-db:5432/gophkeeper?sslmode=disable
+      HTTPS_ADDR: :8443
+      DATABASE_DSN: postgres://keeperuser:keeperpass@gophkeeper-db:5432/gophkeeper?sslmode=disable
+      #для тестирования клиента в докере
+      SERVER_ADDR: server:8443
+      ALLOW_SELF_SIGNED_CERT: true
     ports:
       - 8443:8443
     networks:
